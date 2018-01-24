@@ -69,6 +69,7 @@ import tensorflow as tf
 import input_data
 import models
 import timeit
+import csv
 from tensorflow.python.platform import gfile
 
 FLAGS = None
@@ -287,7 +288,7 @@ def main(_):
 
   set_size = audio_processor.set_size('training')
   tf.logging.info('set_size=%d', set_size)
-  total_accuracy = 0
+  total_accuracy_train = 0
   total_conf_matrix = None
   for i in xrange(0, set_size, FLAGS.batch_size):
     test_fingerprints, test_ground_truth = audio_processor.get_data(
@@ -300,17 +301,28 @@ def main(_):
                   dropout_prob: 1.0
               })
     batch_size = min(FLAGS.batch_size, set_size - i)
-    total_accuracy += (test_accuracy * batch_size) / set_size
+    total_accuracy_train += (test_accuracy * batch_size) / set_size
     if total_conf_matrix is None:
         total_conf_matrix = conf_matrix
     else:
         total_conf_matrix += conf_matrix
 
   tf.logging.info('Confusion Matrix(training):\n %s' % (total_conf_matrix))
-  tf.logging.info('Final test accuracy(training) = %.1f%% (N=%d)' % (total_accuracy * 100,
+  tf.logging.info('Final test accuracy(training) = %.1f%% (N=%d)' % (total_accuracy_train * 100,
                                                            set_size))
 
   End_time = timeit.default_timer()
+
+  with open('result.csv', 'w') as csvFile:
+      fieldnames = ['time', 'performance_testSet', 'performance_trainSet']
+      writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+      resultDict = {}
+      resultDict['time'] = End_time - Start_time)
+      resultDict['performance_testSet'] = total_accuracy
+      resultDict['performance_trainSet'] = total_accuracy_train
+      writer.writeheader()
+      writer.writerow(resultDict)
 
   print(End_time - Start_time)
 
@@ -318,6 +330,7 @@ if __name__ == '__main__':
  
    
   Start_time = timeit.default_timer()
+  
 
   parser = argparse.ArgumentParser()
   parser.add_argument(
